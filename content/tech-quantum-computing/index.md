@@ -1,25 +1,24 @@
 ---
-title: "Quantum Computing Explained Simply"
-slug: "quantum-computing-explained"
+title: "Quantum Computing – A Technical Introduction"
+slug: "quantum-computing-intro"
 status: "publish"
-type: "post"
-categories: ["Quantum Computing", "Tec", "Computing"]
-tags: ["Quantum Computing"]
+categories:
+  - Technology
+  - Quantum
+tags:
+  - Quantum Computing
+  - Qubits
+  - Physics
 ---
 
-# Quantum Computing Explained
+# Quantum Computing
 
-Quantum computing uses quantum bits (qubits) that can be:
-- 0
-- 1
-- or both at the same time (superposition)
+Quantum computers rely on *qubits* instead of classical bits.
 
-## Visualization
+![QC Graphic](qc-graphic.jpg)
 
-![Quantum Graphic](qc-graphic.jpg)
+## Why it matters
 
-## Why It Matters
-
-- Breakthrough cryptography  
-- Faster scientific simulations  
-- Optimization problems  
+- Exponential speed-ups  
+- Next-generation cryptography  
+- Large-scale optimization problems  
