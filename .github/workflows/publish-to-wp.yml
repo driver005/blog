@@ -15,13 +15,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Python deps
-        run: |
-          pip install markdown PyYAML requests python-slugify
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
 
-      - name: Run publisher
+      - name: Install dependencies
+        run: |
+          pip install markdown PyYAML requests python-frontmatter
+
+      - name: Run WordPress Publisher
         env:
           WP_BASE_URL: ${{ secrets.WP_BASE_URL }}
           WP_USER:     ${{ secrets.WP_USER }}
           WP_PASS:     ${{ secrets.WP_PASS }}
-        run: python scripts/publish.py
+        run: |
+          python scripts/publish.py
