@@ -1,27 +1,26 @@
 ---
-title: "Modern AI Overview – 2025"
-slug: "modern-ai-overview"
+title: "AI Technology Overview"
+slug: "ai-technology-overview"
 status: "publish"
-type: "post"
-categories: ["Ai", "Tec"]
-tags: ["Ai"]
+categories:
+  - Technology
+  - AI
+tags:
+  - Machine Learning
+  - Neural Networks
+  - AI
 ---
 
-# Modern AI Overview
+# AI Technology Overview
 
-Artificial Intelligence in 2025 has evolved through major breakthroughs in:
-
-- Large Language Models  
-- Autonomous Agents  
-- Multimodal Understanding  
-- Robotics
-
-## AI Architecture Diagram
+Artificial Intelligence (AI) is transforming industries globally.  
+Below is a diagram describing the core AI workflow:
 
 ![AI Diagram](ai-diagram.png)
 
-### Key Trends
+## Key Components
 
-1. Multimodal reasoning  
-2. On-device AI acceleration  
-3. Autonomous decision systems  
+- Machine Learning
+- Neural Networks
+- Data Pipelines
+- Reasoning Systems
