@@ -2,33 +2,26 @@ name: Publish Markdown to WordPress
 
 on:
   push:
+    branches: [ "main" ]
     paths:
       - "content/**/*.md"
-      - "content/images/**/*"
-    branches:
-      - main
+      - "content/**/*.{png,jpg,jpeg,webp}"
 
 jobs:
   publish:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.11"
-
-      - name: Install dependencies
+      - name: Install Python deps
         run: |
           pip install markdown PyYAML requests python-slugify
 
-      - name: Publish to WordPress
+      - name: Run publisher
         env:
-          WP_URL: ${{ secrets.WP_URL }}
-          WP_USER: ${{ secrets.WP_USER }}
-          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
-        run: |
-          python3 ./publish_to_wp.py
+          WP_BASE_URL: ${{ secrets.WP_BASE_URL }}
+          WP_USER:     ${{ secrets.WP_USER }}
+          WP_PASS:     ${{ secrets.WP_PASS }}
+        run: python scripts/publish.py
