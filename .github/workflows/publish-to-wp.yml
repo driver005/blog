@@ -1,6 +1,7 @@
 name: Publish Markdown to WordPress
 
 on:
+  workflow_dispatch:
   push:
     branches: [ "main" ]
     paths:
