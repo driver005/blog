@@ -16,8 +16,6 @@ tags:
 Artificial Intelligence (AI) is transforming industries globally.  
 Below is a diagram describing the core AI workflow:
 
-![AI Diagram](ai-diagram.png)
-
 ## Key Components
 
 - Machine Learning

@@ -15,10 +15,8 @@ tags:
 
 Quantum computers rely on *qubits* instead of classical bits.
 
-![QC Graphic](qc-graphic.jpg)
-
 ## Why it matters
 
 - Exponential speed-ups  
 - Next-generation cryptography  
-- Large-scale optimization problems  
+- Large-scale optimization problems
