@@ -5,7 +5,8 @@ import requests
 import markdown
 import frontmatter
 
-WP_URL = os.getenv("WP_BASE_URL").rstrip("/")
+# WP_URL = os.getenv("WP_BASE_URL").rstrip("/")
+WP_BASE_URL = "https://blog.a42n.com"
 WP_USER = os.getenv("WP_USER")
 WP_PASS = os.getenv("WP_PASS")
 
