@@ -14,6 +14,11 @@ jobs:
     environment: action
 
     steps:
+      - name: Network debug
+        run: |
+          ping -c 4 blog.a42n.com || true
+          nslookup blog.a42n.com || true
+          curl -I https://blog.a42n.com || true
       - name: Checkout repository
         uses: actions/checkout@v4
 
