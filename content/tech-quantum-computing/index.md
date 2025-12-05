@@ -3,12 +3,15 @@ title: "Quantum Computing – A Technical Introduction"
 slug: "quantum-computing-intro"
 status: "publish"
 categories:
-  - Technology
-  - Quantum
+  - name: Technology
+  - name: Quantum
 tags:
-  - Quantum Computing
-  - Qubits
-  - Physics
+  - name: Qubits
+    description: "All about qubits."
+  - name: Physics
+    description: "Physics-related content"
+
+
 featured_image: "quantum-computing.png"
 ---
 

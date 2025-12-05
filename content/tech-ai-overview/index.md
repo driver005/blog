@@ -3,8 +3,8 @@ title: "AI Technology Overview"
 slug: "ai-technology-overview"
 status: "publish"
 categories:
-  - Technology
-  - AI
+  - name: Technology
+  - name: Ai
 tags:
   - Machine Learning
   - Neural Networks
