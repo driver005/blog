@@ -1,3 +1,4 @@
+import argparse
 import base64
 import json
 import os
@@ -5,10 +6,22 @@ import os
 import frontmatter
 import markdown
 import requests
+from dotenv import load_dotenv
 
-WP_URL = str(os.getenv("vars.WP_BASE_URL") or "").rstrip("/")
-WP_USER = os.getenv("vars.WP_USER")
-WP_PASS = os.getenv("secrects.WP_PASS")
+# Load .env file if present
+load_dotenv()
+
+# CLI overrides
+parser = argparse.ArgumentParser()
+parser.add_argument("--url", default=os.getenv("WP_BASE_URL"))
+parser.add_argument("--user", default=os.getenv("WP_USER"))
+parser.add_argument("--passw", default=os.getenv("WP_PASS"))
+args = parser.parse_args()
+
+# Normalize
+WP_URL = str(args.url or "").rstrip("/")
+WP_USER = args.user
+WP_PASS = args.passw
 
 AUTH = base64.b64encode(f"{WP_USER}:{WP_PASS}".encode()).decode()
 HEADERS = {"Authorization": f"Basic {AUTH}", "Content-Type": "application/json"}

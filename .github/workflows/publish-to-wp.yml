@@ -3,7 +3,7 @@ name: Publish Markdown to WordPress
 on:
   workflow_dispatch:
   push:
-    branches: [ "master" ]
+    branches: ["master"]
     paths:
       - "content/**/*.md"
       - "content/**/*.{png,jpg,jpeg,webp}"
@@ -23,12 +23,12 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install markdown PyYAML requests python-frontmatter
+          pip install markdown PyYAML requests python-frontmatter dotenv
 
       - name: Run WordPress Publisher
         env:
-          WP_BASE_URL: ${{ secrets.WP_BASE_URL }}
-          WP_USER:     ${{ secrets.WP_USER }}
-          WP_PASS:     ${{ secrets.WP_PASS }}
+          WP_BASE_URL: ${{ vars.WP_BASE_URL }}
+          WP_USER: ${{ vars.WP_USER }}
+          WP_PASS: ${{ secrets.WP_PASS }}
         run: |
           python scripts/publish.py
