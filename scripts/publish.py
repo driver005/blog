@@ -6,9 +6,9 @@ import frontmatter
 import markdown
 import requests
 
-WP_URL = "https://blog.a42n.com"
-WP_USER = "bot"
-WP_PASS = "hjyy 1hDR 59Hc YYhJ 7Ci9 H6C7"
+WP_URL = str(os.getenv("WP_BASE_URL") or "").rstrip("/")
+WP_USER = os.getenv("WP_USER")
+WP_PASS = os.getenv("WP_PASS")
 
 AUTH = base64.b64encode(f"{WP_USER}:{WP_PASS}".encode()).decode()
 HEADERS = {"Authorization": f"Basic {AUTH}", "Content-Type": "application/json"}
@@ -21,6 +21,7 @@ CONTENT_DIR = "content"
 # ---------------------------------------------
 def ensure_category(name):
     """Creates a category if missing and returns ID."""
+    print(WP_URL)
     r = requests.get(
         f"{WP_URL}/wp-json/wp/v2/categories?search={name}", headers=HEADERS
     )
