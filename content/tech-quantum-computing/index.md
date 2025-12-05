@@ -11,6 +11,8 @@ tags:
   - Physics
 ---
 
+![Quantum Computing](quantum-computing.png)
+
 # Quantum Computing
 
 Quantum computers rely on *qubits* instead of classical bits.
