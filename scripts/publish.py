@@ -1,19 +1,17 @@
-import os
 import base64
 import json
-import requests
-import markdown
+import os
+
 import frontmatter
+import markdown
+import requests
 
 WP_URL = os.getenv("WP_BASE_URL").rstrip("/")
 WP_USER = os.getenv("WP_USER")
 WP_PASS = os.getenv("WP_PASS")
 
 AUTH = base64.b64encode(f"{WP_USER}:{WP_PASS}".encode()).decode()
-HEADERS = {
-    "Authorization": f"Basic {AUTH}",
-    "Content-Type": "application/json"
-}
+HEADERS = {"Authorization": f"Basic {AUTH}", "Content-Type": "application/json"}
 
 CONTENT_DIR = "content"
 
@@ -23,7 +21,9 @@ CONTENT_DIR = "content"
 # ---------------------------------------------
 def ensure_category(name):
     """Creates a category if missing and returns ID."""
-    r = requests.get(f"{WP_URL}/wp-json/wp/v2/categories?search={name}", headers=HEADERS)
+    r = requests.get(
+        f"{WP_URL}/wp-json/wp/v2/categories?search={name}", headers=HEADERS
+    )
     data = r.json()
     if isinstance(data, list) and data:
         return data[0]["id"]
@@ -31,7 +31,7 @@ def ensure_category(name):
     r = requests.post(
         f"{WP_URL}/wp-json/wp/v2/categories",
         headers=HEADERS,
-        data=json.dumps({"name": name})
+        data=json.dumps({"name": name}),
     )
     return r.json()["id"]
 
@@ -44,9 +44,7 @@ def ensure_tag(name):
         return data[0]["id"]
 
     r = requests.post(
-        f"{WP_URL}/wp-json/wp/v2/tags",
-        headers=HEADERS,
-        data=json.dumps({"name": name})
+        f"{WP_URL}/wp-json/wp/v2/tags", headers=HEADERS, data=json.dumps({"name": name})
     )
     return r.json()["id"]
 
@@ -60,14 +58,10 @@ def upload_image(image_path):
     headers = {
         "Authorization": f"Basic {AUTH}",
         "Content-Disposition": f"attachment; filename={fname}",
-        "Content-Type": "image/jpeg" if fname.endswith(".jpg") else "image/png"
+        "Content-Type": "image/jpeg" if fname.endswith(".jpg") else "image/png",
     }
 
-    r = requests.post(
-        f"{WP_URL}/wp-json/wp/v2/media",
-        headers=headers,
-        data=img_data
-    )
+    r = requests.post(f"{WP_URL}/wp-json/wp/v2/media", headers=headers, data=img_data)
     r.raise_for_status()
     return r.json()["source_url"]
 
@@ -101,8 +95,7 @@ for root, dirs, files in os.walk(CONTENT_DIR):
 
     # Upload images in directory
     images = [
-        f for f in os.listdir(post_dir)
-        if f.lower().endswith((".png", ".jpg", ".jpeg"))
+        f for f in os.listdir(post_dir) if f.lower().endswith((".png", ".jpg", ".jpeg"))
     ]
 
     for img in images:
@@ -114,12 +107,8 @@ for root, dirs, files in os.walk(CONTENT_DIR):
     html = markdown.markdown(raw_md)
 
     # Categories & Tags
-    categories = [
-        ensure_category(c) for c in post_md.get("categories", [])
-    ]
-    tags = [
-        ensure_tag(t) for t in post_md.get("tags", [])
-    ]
+    categories = [ensure_category(c) for c in post_md.get("categories", [])]
+    tags = [ensure_tag(t) for t in post_md.get("tags", [])]
 
     post_data = {
         "title": title,
@@ -127,7 +116,7 @@ for root, dirs, files in os.walk(CONTENT_DIR):
         "content": html,
         "status": status,
         "categories": categories,
-        "tags": tags
+        "tags": tags,
     }
 
     existing = find_existing_post(slug)
@@ -137,14 +126,12 @@ for root, dirs, files in os.walk(CONTENT_DIR):
         r = requests.post(
             f"{WP_URL}/wp-json/wp/v2/posts/{existing}",
             headers=HEADERS,
-            data=json.dumps(post_data)
+            data=json.dumps(post_data),
         )
     else:
         print(f"Creating new post: {slug}")
         r = requests.post(
-            f"{WP_URL}/wp-json/wp/v2/posts",
-            headers=HEADERS,
-            data=json.dumps(post_data)
+            f"{WP_URL}/wp-json/wp/v2/posts", headers=HEADERS, data=json.dumps(post_data)
         )
 
     print(r.status_code, r.text)
