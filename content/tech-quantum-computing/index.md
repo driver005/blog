@@ -9,6 +9,7 @@ tags:
   - Quantum Computing
   - Qubits
   - Physics
+featured_image: "quantum-computing.png"
 ---
 
 ![Quantum Computing](quantum-computing.png)

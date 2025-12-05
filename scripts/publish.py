@@ -18,7 +18,6 @@ parser.add_argument("--user", default=os.getenv("WP_USER"))
 parser.add_argument("--passw", default=os.getenv("WP_PASS"))
 args = parser.parse_args()
 
-# Normalize
 WP_URL = str(args.url or "").rstrip("/")
 WP_USER = args.user
 WP_PASS = args.passw
@@ -33,8 +32,6 @@ CONTENT_DIR = "content"
 # WordPress helpers
 # ---------------------------------------------
 def ensure_category(name):
-    """Creates a category if missing and returns ID."""
-    print(WP_URL)
     r = requests.get(
         f"{WP_URL}/wp-json/wp/v2/categories?search={name}", headers=HEADERS
     )
@@ -51,20 +48,21 @@ def ensure_category(name):
 
 
 def ensure_tag(name):
-    """Creates a tag if missing and returns ID."""
     r = requests.get(f"{WP_URL}/wp-json/wp/v2/tags?search={name}", headers=HEADERS)
     data = r.json()
     if isinstance(data, list) and data:
         return data[0]["id"]
 
     r = requests.post(
-        f"{WP_URL}/wp-json/wp/v2/tags", headers=HEADERS, data=json.dumps({"name": name})
+        f"{WP_URL}/wp-json/wp/v2/tags",
+        headers=HEADERS,
+        data=json.dumps({"name": name}),
     )
     return r.json()["id"]
 
 
-def upload_image(image_path):
-    """Uploads an image to WordPress."""
+def upload_image_ret_meta(image_path):
+    """Upload and return FULL metadata including ID and URL."""
     fname = os.path.basename(image_path)
     with open(image_path, "rb") as f:
         img_data = f.read()
@@ -72,16 +70,15 @@ def upload_image(image_path):
     headers = {
         "Authorization": f"Basic {AUTH}",
         "Content-Disposition": f"attachment; filename={fname}",
-        "Content-Type": "image/jpeg" if fname.endswith(".jpg") else "image/png",
+        "Content-Type": "image/jpeg" if fname.lower().endswith(".jpg") else "image/png",
     }
 
     r = requests.post(f"{WP_URL}/wp-json/wp/v2/media", headers=headers, data=img_data)
     r.raise_for_status()
-    return r.json()["source_url"]
+    return r.json()  # contains id, source_url, etc.
 
 
 def find_existing_post(slug):
-    """Returns existing post ID if found."""
     r = requests.get(f"{WP_URL}/wp-json/wp/v2/posts?slug={slug}", headers=HEADERS)
     posts = r.json()
     if isinstance(posts, list) and posts:
@@ -98,7 +95,6 @@ for root, dirs, files in os.walk(CONTENT_DIR):
 
     md_path = os.path.join(root, "index.md")
     post_dir = root
-
     post_md = frontmatter.load(md_path)
 
     title = post_md.get("title", "Untitled")
@@ -107,15 +103,28 @@ for root, dirs, files in os.walk(CONTENT_DIR):
 
     raw_md = post_md.content
 
-    # Upload images in directory
+    # Image handling
     images = [
         f for f in os.listdir(post_dir) if f.lower().endswith((".png", ".jpg", ".jpeg"))
     ]
 
+    uploaded_images = {}
     for img in images:
         img_path = os.path.join(post_dir, img)
-        wp_url = upload_image(img_path)
-        raw_md = raw_md.replace(img, wp_url)
+        result = upload_image_ret_meta(img_path)
+        uploaded_images[img] = result
+        raw_md = raw_md.replace(img, result["source_url"])
+
+    # Featured image logic
+    featured_media_id = None
+    featured_image_name = post_md.get("featured_image")  # optional
+
+    if featured_image_name and featured_image_name in uploaded_images:
+        featured_media_id = uploaded_images[featured_image_name]["id"]
+    elif images:
+        # fallback: first image
+        first = images[0]
+        featured_media_id = uploaded_images[first]["id"]
 
     # Convert Markdown → HTML
     html = markdown.markdown(raw_md)
@@ -133,6 +142,9 @@ for root, dirs, files in os.walk(CONTENT_DIR):
         "tags": tags,
     }
 
+    if featured_media_id:
+        post_data["featured_media"] = featured_media_id
+
     existing = find_existing_post(slug)
 
     if existing:
@@ -145,7 +157,9 @@ for root, dirs, files in os.walk(CONTENT_DIR):
     else:
         print(f"Creating new post: {slug}")
         r = requests.post(
-            f"{WP_URL}/wp-json/wp/v2/posts", headers=HEADERS, data=json.dumps(post_data)
+            f"{WP_URL}/wp-json/wp/v2/posts",
+            headers=HEADERS,
+            data=json.dumps(post_data),
         )
 
     print(r.status_code, r.text)
