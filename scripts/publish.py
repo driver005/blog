@@ -61,9 +61,37 @@ def ensure_tag(name):
     return r.json()["id"]
 
 
+def find_existing_media(filename):
+    """Return existing media metadata if file already uploaded."""
+    name = os.path.splitext(filename)[0]
+
+    r = requests.get(f"{WP_URL}/wp-json/wp/v2/media?search={name}", headers=HEADERS)
+
+    if r.status_code != 200:
+        return None
+
+    items = r.json()
+    if isinstance(items, list):
+        # Try exact match
+        for item in items:
+            if item.get("title", {}).get("rendered", "").lower() == name.lower():
+                return item
+
+    return None
+
+
 def upload_image_ret_meta(image_path):
-    """Upload and return FULL metadata including ID and URL."""
+    """Upload image only if not already uploaded. Return full WordPress media metadata."""
     fname = os.path.basename(image_path)
+
+    # 1) Check if exists
+    existing = find_existing_media(fname)
+    if existing:
+        print(f"Image already exists on WP: {fname}")
+        return existing
+
+    # 2) Upload if not found
+    print(f"Uploading new image: {fname}")
     with open(image_path, "rb") as f:
         img_data = f.read()
 
@@ -75,7 +103,7 @@ def upload_image_ret_meta(image_path):
 
     r = requests.post(f"{WP_URL}/wp-json/wp/v2/media", headers=headers, data=img_data)
     r.raise_for_status()
-    return r.json()  # contains id, source_url, etc.
+    return r.json()
 
 
 def find_existing_post(slug):
