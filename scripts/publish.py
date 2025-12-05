@@ -6,9 +6,9 @@ import frontmatter
 import markdown
 import requests
 
-WP_URL = str(os.getenv("WP_BASE_URL") or "").rstrip("/")
-WP_USER = os.getenv("WP_USER")
-WP_PASS = os.getenv("WP_PASS")
+WP_URL = str(os.getenv("vars.WP_BASE_URL") or "").rstrip("/")
+WP_USER = os.getenv("vars.WP_USER")
+WP_PASS = os.getenv("secrects.WP_PASS")
 
 AUTH = base64.b64encode(f"{WP_USER}:{WP_PASS}".encode()).decode()
 HEADERS = {"Authorization": f"Basic {AUTH}", "Content-Type": "application/json"}
