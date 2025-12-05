@@ -1,0 +1,60 @@
+<div class="tnp tnp-subscription ">
+<form method="post" action="https://a42n.com/blog/wp-admin/admin-ajax.php?action=tnp&na=s">
+<input type="hidden" name="nlang" value="">
+<div class="tnp-field tnp-field-email"><label for="tnp-1">Email</label>
+<input class="tnp-email" type="email" name="ne" id="tnp-1" value="" placeholder="" required></div>
+<div class="tnp-field tnp-privacy-field"><label><input type="checkbox" name="ny" required class="tnp-privacy"> I accept the privacy policy</label></div><div class="tnp-field tnp-field-button" style="text-align: left"><input class="tnp-submit" type="submit" value="Subscribe" style="">
+</div>
+</form>
+<script>
+const params = new URLSearchParams(window.location.search);
+
+// -------- NEW: confirmation handling --------
+const nm = params.get("nm");
+const container = document.querySelector(".tnp.tnp-subscription");
+
+if (nm === "confirmation" || nm === "confirmed") {
+    const msg = document.createElement("div");
+    msg.style.padding = "20px";
+    msg.style.fontSize = "1.25rem";
+    msg.style.fontWeight = "600";
+    msg.style.marginBottom = "20px";
+    msg.style.textAlign = "center";
+
+    if (nm === "confirmation") {
+        msg.textContent = "Please confirm your email — check your inbox.";
+    } else if (nm === "confirmed") {
+        msg.textContent = "Your email has been confirmed! 🎉";
+    }
+
+    // Insert message BEFORE the form
+    container.parentNode.insertBefore(msg, container);
+
+    // Hide the entire subscribe box
+    container.style.display = "none";
+}
+// ------------------------------------------------
+
+
+// -------- ORIGINAL EMAIL PREFILL LOGIC --------
+const emailValue = params.get("email");
+
+if (emailValue) {
+    const field = document.querySelector('input[name="ne"]');
+    if (field) {
+        field.value = emailValue;
+        field.readOnly = true;
+        field.classList.add("email-locked-style");
+    }
+}
+</script>
+<style>
+/* Visual style for non-editable email input */
+.email-locked-style {
+    pointer-events: none !important;
+    background-color: #f3f3f3 !important;
+    color: #666 !important;
+    opacity: 0.85;
+}
+</style>
+</div>
