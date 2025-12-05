@@ -1,6 +1,20 @@
+#!/usr/bin/env python3
+"""
+Push Markdown content to WordPress with:
+
+✔ Category descriptions
+✔ Category icons (custom meta field)
+✔ Tag descriptions
+✔ Image upload with skip-if-exists
+✔ Featured image support
+✔ Markdown → HTML
+✔ Full logging support
+"""
+
 import argparse
 import base64
 import json
+import logging
 import os
 
 import frontmatter
@@ -8,9 +22,25 @@ import markdown
 import requests
 from dotenv import load_dotenv
 
+# -------------------------------------------------------------------
+# Logging setup
+# -------------------------------------------------------------------
+LOG_FILE = "wp_sync.log"
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[logging.FileHandler(LOG_FILE), logging.StreamHandler()],
+)
+
+log = logging.getLogger(__name__)
+
+
+# -------------------------------------------------------------------
+# Load env vars
+# -------------------------------------------------------------------
 load_dotenv()
 
-# CLI overrides
 parser = argparse.ArgumentParser()
 parser.add_argument("--url", default=os.getenv("WP_BASE_URL"))
 parser.add_argument("--user", default=os.getenv("WP_USER"))
@@ -26,16 +56,15 @@ HEADERS = {"Authorization": f"Basic {AUTH}", "Content-Type": "application/json"}
 
 CONTENT_DIR = "content"
 
+log.info(f"Using WordPress: {WP_URL}")
+log.info(f"Content directory: {os.path.abspath(CONTENT_DIR)}")
 
-# -------------------------------------------------------------------
-# Category + Tag helpers WITH description + icon support
-# -------------------------------------------------------------------
+
+# ===================================================================
+# CATEGORY + TAG HELPERS
+# ===================================================================
 def ensure_category(cat):
-    """
-    cat can be:
-      - string ("Technology")
-      - dict {"name": "...", "description": "...", "icon": "..."}
-    """
+    """Create/update category with description + icon."""
     if isinstance(cat, str):
         name = cat
         description = ""
@@ -45,31 +74,34 @@ def ensure_category(cat):
         description = cat.get("description", "")
         icon = cat.get("icon")
 
-    # Check existing
+    log.info(f"Ensuring category exists: {name}")
+
     r = requests.get(
         f"{WP_URL}/wp-json/wp/v2/categories?search={name}", headers=HEADERS
     )
     data = r.json()
+
     if isinstance(data, list) and data:
         cat_id = data[0]["id"]
-        # Update description or icon if needed
+        log.info(f"→ Category exists [{cat_id}] {name}")
+
         update_data = {}
         if description and data[0].get("description") != description:
             update_data["description"] = description
         if icon:
-            # Save icon into meta
             update_data["meta"] = {"category_icon": icon}
 
         if update_data:
+            log.info(f"→ Updating category {name}")
             requests.post(
                 f"{WP_URL}/wp-json/wp/v2/categories/{cat_id}",
                 headers=HEADERS,
                 data=json.dumps(update_data),
             )
-
         return cat_id
 
-    # Create category
+    # Create new category
+    log.info(f"→ Creating new category: {name}")
     payload = {"name": name, "description": description}
     if icon:
         payload["meta"] = {"category_icon": icon}
@@ -83,11 +115,7 @@ def ensure_category(cat):
 
 
 def ensure_tag(tag):
-    """
-    tag can be:
-      - string ("Qubits")
-      - dict {"name": "...", "description": "..."}
-    """
+    """Create/update tag with optional description."""
     if isinstance(tag, str):
         name = tag
         description = ""
@@ -95,21 +123,25 @@ def ensure_tag(tag):
         name = tag.get("name")
         description = tag.get("description", "")
 
+    log.info(f"Ensuring tag exists: {name}")
+
     r = requests.get(f"{WP_URL}/wp-json/wp/v2/tags?search={name}", headers=HEADERS)
     data = r.json()
+
     if isinstance(data, list) and data:
         tag_id = data[0]["id"]
+        log.info(f"→ Tag exists [{tag_id}] {name}")
 
-        # Update description if changed
         if description and data[0].get("description") != description:
+            log.info(f"→ Updating tag description: {name}")
             requests.post(
                 f"{WP_URL}/wp-json/wp/v2/tags/{tag_id}",
                 headers=HEADERS,
                 data=json.dumps({"description": description}),
             )
-
         return tag_id
 
+    log.info(f"→ Creating new tag: {name}")
     r = requests.post(
         f"{WP_URL}/wp-json/wp/v2/tags",
         headers=HEADERS,
@@ -118,32 +150,43 @@ def ensure_tag(tag):
     return r.json()["id"]
 
 
-# -------------------------------------------------------------------
-# Image handling (with skip-if-exists)
-# -------------------------------------------------------------------
+# ===================================================================
+# IMAGE HANDLING
+# ===================================================================
 def wp_find_existing_image(fname):
-    """Search existing media by file name."""
-    r = requests.get(
-        f"{WP_URL}/wp-json/wp/v2/media?search={fname}",
-        headers=HEADERS,
-    )
+    """Find an existing image by filename."""
+    log.debug(f"Searching for existing media: {fname}")
+
+    r = requests.get(f"{WP_URL}/wp-json/wp/v2/media?search={fname}", headers=HEADERS)
     data = r.json()
+
     if isinstance(data, list) and data:
-        return data[0]["source_url"]
+        log.info(f"→ Found existing media: {fname}")
+        return data[0]
     return None
 
 
 def upload_image(image_path):
-    """Upload image unless it already exists."""
+    """
+    Upload image unless existing.
+    Returns (media_id, url)
+    """
     fname = os.path.basename(image_path)
+    log.info(f"Handling image: {fname}")
 
     existing = wp_find_existing_image(fname)
     if existing:
-        print(f"→ Skipping upload, already exists: {fname}")
-        return existing
+        log.info(f"→ Skipping upload, exists: {fname}")
+        return existing["id"], existing["source_url"]
 
-    with open(image_path, "rb") as f:
-        img_data = f.read()
+    try:
+        with open(image_path, "rb") as f:
+            img_data = f.read()
+    except FileNotFoundError:
+        log.error(f"Image not found: {image_path}")
+        return None, None
+
+    log.info(f"→ Uploading image: {fname}")
 
     headers = {
         "Authorization": f"Basic {AUTH}",
@@ -153,26 +196,33 @@ def upload_image(image_path):
 
     r = requests.post(f"{WP_URL}/wp-json/wp/v2/media", headers=headers, data=img_data)
     r.raise_for_status()
-    return r.json()["source_url"]
+
+    media = r.json()
+    return media["id"], media["source_url"]
 
 
-# -------------------------------------------------------------------
-# Post helper
-# -------------------------------------------------------------------
+# ===================================================================
+# POST HELPERS
+# ===================================================================
 def find_existing_post(slug):
+    """Return existing post ID if available."""
+    log.debug(f"Searching for post: {slug}")
     r = requests.get(f"{WP_URL}/wp-json/wp/v2/posts?slug={slug}", headers=HEADERS)
     posts = r.json()
     if isinstance(posts, list) and posts:
+        log.info(f"→ Existing post found: {slug} [{posts[0]['id']}]")
         return posts[0]["id"]
     return None
 
 
-# -------------------------------------------------------------------
-# Main logic
-# -------------------------------------------------------------------
+# ===================================================================
+# MAIN RUN LOOP
+# ===================================================================
 for root, dirs, files in os.walk(CONTENT_DIR):
     if "index.md" not in files:
         continue
+
+    log.info(f"Processing folder: {root}")
 
     md_path = os.path.join(root, "index.md")
     post_md = frontmatter.load(md_path)
@@ -182,22 +232,48 @@ for root, dirs, files in os.walk(CONTENT_DIR):
     status = post_md.get("status", "draft")
     raw_md = post_md.content
 
-    # Handle images
+    log.info(f"Post Title: {title}")
+    log.info(f"Post Slug:  {slug}")
+
+    # ---------------------------------------------------------------
+    # Featured image
+    # ---------------------------------------------------------------
+    featured_media_id = None
+    fm_featured = post_md.get("featured_image")
+
+    if fm_featured:
+        fp = os.path.join(root, fm_featured)
+        log.info(f"Featured image from front-matter: {fm_featured}")
+        featured_media_id, _ = upload_image(fp)
+
+    # ---------------------------------------------------------------
+    # Upload + replace images
+    # ---------------------------------------------------------------
     for img in os.listdir(root):
         if img.lower().endswith((".png", ".jpg", ".jpeg")):
             img_path = os.path.join(root, img)
-            url = upload_image(img_path)
+            media_id, url = upload_image(img_path)
+
+            if media_id is None:
+                continue
+
+            if featured_media_id is None:
+                featured_media_id = media_id
+
             raw_md = raw_md.replace(img, url)
 
+    # Convert markdown to HTML
     html = markdown.markdown(raw_md)
 
-    # Category + tag object support
-    categories_front = post_md.get("categories", [])
-    tags_front = post_md.get("tags", [])
+    # ---------------------------------------------------------------
+    # Categories & Tags
+    # ---------------------------------------------------------------
+    categories = [ensure_category(c) for c in post_md.get("categories", [])]
+    tags = [ensure_tag(t) for t in post_md.get("tags", [])]
 
-    categories = [ensure_category(c) for c in categories_front]
-    tags = [ensure_tag(t) for t in tags_front]
-
+    # ---------------------------------------------------------------
+    # Build post data
+    # ---------------------------------------------------------------
     post_data = {
         "title": title,
         "slug": slug,
@@ -207,20 +283,28 @@ for root, dirs, files in os.walk(CONTENT_DIR):
         "tags": tags,
     }
 
+    if featured_media_id:
+        post_data["featured_media"] = featured_media_id
+        log.info(f"Featured media ID: {featured_media_id}")
+
+    # ---------------------------------------------------------------
+    # Create/update post
+    # ---------------------------------------------------------------
     existing = find_existing_post(slug)
+
     if existing:
-        print(f"Updating post: {slug}")
+        log.info(f"Updating post: {slug}")
         r = requests.post(
             f"{WP_URL}/wp-json/wp/v2/posts/{existing}",
             headers=HEADERS,
             data=json.dumps(post_data),
         )
     else:
-        print(f"Creating post: {slug}")
+        log.info(f"Creating new post: {slug}")
         r = requests.post(
             f"{WP_URL}/wp-json/wp/v2/posts",
             headers=HEADERS,
             data=json.dumps(post_data),
         )
 
-    print(r.status_code, r.text)
+    log.info(f"→ Response {r.status_code}: {r.text[:200]}")
