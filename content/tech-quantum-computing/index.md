@@ -7,9 +7,7 @@ categories:
   - name: Quantum
 tags:
   - name: Qubits
-    description: "All about qubits."
   - name: Physics
-    description: "Physics-related content"
 
 
 featured_image: "quantum-computing.png"
