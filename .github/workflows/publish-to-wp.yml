@@ -3,7 +3,7 @@ name: Publish Markdown to WordPress
 on:
   workflow_dispatch:
   push:
-    branches: [ "main" ]
+    branches: [ "master" ]
     paths:
       - "content/**/*.md"
       - "content/**/*.{png,jpg,jpeg,webp}"
