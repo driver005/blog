@@ -10,7 +10,8 @@ tags:
   - name: Editor
   - name: Keybinding
   - name: Vim
-featured_image: "quantum-computing.png"
+featured_image: "https://miro.medium.com/v2/resize:fit:4800/format:webp/1*CGXsIg5wiNKwvdgQZ3boZg.png"
+featured_alt: "Image by https://blog.stackademic.com/reviewing-zed-the-ide-of-the-future-305d681d990c"
 ---
 
 # Zed Vim Mode Cheat Sheet
