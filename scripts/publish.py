@@ -24,18 +24,43 @@ import markdown
 import requests
 from dotenv import load_dotenv
 
+log = logging.getLogger(__name__)
+
+
 # -------------------------------------------------------------------
 # Logging setup
 # -------------------------------------------------------------------
-LOG_FILE = "wp_sync.log"
+def setup_logging(log_file=None, level=logging.INFO):
+    """
+    Configure logging.
+    If log_file is None → no file logging.
+    """
+    logger = logging.getLogger()
+    logger.setLevel(level)
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[logging.FileHandler(LOG_FILE), logging.StreamHandler()],
-)
+    # Remove old handlers
+    for h in list(logger.handlers):
+        logger.removeHandler(h)
 
-log = logging.getLogger(__name__)
+    # Console handler
+    console = logging.StreamHandler()
+    console.setLevel(level)
+    console.setFormatter(logging.Formatter("[%(levelname)s] %(message)s"))
+    logger.addHandler(console)
+
+    # File logging only if enabled
+    if log_file:
+        file = logging.FileHandler(log_file, mode="a", encoding="utf-8")
+        file.setLevel(level)
+        file.setFormatter(
+            logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+        )
+        logger.addHandler(file)
+
+    logger.debug(
+        "Logging initialized (file logging: %s)"
+        % (log_file if log_file else "DISABLED")
+    )
 
 
 # ===================================================================
@@ -219,6 +244,13 @@ def main():
     parser.add_argument("--url", default=os.getenv("WP_BASE_URL"))
     parser.add_argument("--user", default=os.getenv("WP_USER"))
     parser.add_argument("--passw", default=os.getenv("WP_PASS"))
+    parser.add_argument(
+        "--log-file",
+        nargs="?",
+        const="wp_push.log",
+        default=None,
+        help="Enable file logging. Optionally provide a custom file name.",
+    )
     args = parser.parse_args()
 
     WP_URL = str(args.url or "").rstrip("/")
@@ -228,6 +260,8 @@ def main():
     AUTH = base64.b64encode(f"{WP_USER}:{WP_PASS}".encode()).decode()
     HEADERS = {"Authorization": f"Basic {AUTH}", "Content-Type": "application/json"}
     CONTENT_DIR = "content"
+
+    setup_logging(args.log_file)
 
     log.info(f"Using WordPress: {WP_URL}")
     log.info(f"Content directory: {os.path.abspath(CONTENT_DIR)}")

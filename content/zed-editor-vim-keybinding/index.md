@@ -1,6 +1,6 @@
 ---
 title: "Zed editor keybinding for Vim"
-slug: "vim-keybinding"
+slug: "zed-editor-vim-keybinding"
 status: "publish"
 categories:
   - name: Technology
@@ -10,7 +10,7 @@ tags:
   - name: Editor
   - name: Keybinding
   - name: Vim
-featured_image: "https://miro.medium.com/v2/resize:fit:4800/format:webp/1*CGXsIg5wiNKwvdgQZ3boZg.png"
+featured_image: "zed.webp"
 featured_alt: "Image by https://blog.stackademic.com/reviewing-zed-the-ide-of-the-future-305d681d990c"
 ---
 
